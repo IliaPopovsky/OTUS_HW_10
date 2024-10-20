@@ -14,8 +14,14 @@ int main(void)
     FILE *fpt = NULL;
     long last = 0;
     char name_file[100] = {0};
+    char name_socket[100] = {0};
     int ch = 0;
     char control_symbol = 0;
+    printf("Вы хотите демонизировать (перевести в фоновый режим работы) наш процесс с PID = %d?\n", getpid());
+    printf("Введите  если ДА, введите (или любой другой символ отличный от) если НЕТ:\n");
+    scanf("%c", &control_symbol);
+    while(getchar() != '\n')
+        continue;
 
     if(control_symbol == 'd')
     {
