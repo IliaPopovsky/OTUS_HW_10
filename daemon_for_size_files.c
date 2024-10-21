@@ -17,8 +17,9 @@ int main(void)
     char name_socket[100] = {0};
     int ch = 0;
     char control_symbol = 0;
+    pid_t ret;
     printf("Вы хотите демонизировать (перевести в фоновый режим работы) наш процесс с PID = %d?\n", getpid());
-    printf("Введите  если ДА, введите (или любой другой символ отличный от) если НЕТ:\n");
+    printf("Введите d если ДА, введите n (или любой другой символ отличный от d) если НЕТ:\n");
     scanf("%c", &control_symbol);
     while(getchar() != '\n')
         continue;
@@ -93,10 +94,17 @@ int main(void)
        printf("Not open file %s\n", "my_daemon.conf");
        exit(EXIT_FAILURE);
     }
-    for(int i = 0; (ch = getc(fp)) != EOF; i++)
+    for(int i = 0; (ch = getc(fp)) != ','; i++)
     {
        if(('A' <= ch && ch <='Z') || ('a' <= ch && ch <='z') || ch == '.' || ch == '_')
            name_file[i] = ch;
+       else
+           i--;
+    }
+    for(int i = 0; (ch = getc(fp)) != EOF; i++)
+    {
+       if(('A' <= ch && ch <='Z') || ('a' <= ch && ch <='z') || ch == '.' || ch == '_')
+           name_socket[i] = ch;
        else
            i--;
     }
@@ -109,6 +117,21 @@ int main(void)
     fseek(fpt, 0L, SEEK_END);               // перейти в конец файла
     last = ftell(fpt);
     printf("last = %ld\n", last);
+    ret = fork();
+    if(ret)
+    {
+       sleep(60);
+       system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");
+       //system("/home/ilia/Socket_UDS/echo_socket.out");
+    }
+    else
+    {
+       execvp("/home/ilia/Socket_UDS/echo_socket.out", NULL);
+       //system("/home/ilia/Socket_UDS/echo_socket.out");
+       //system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");
+    }
+
+
     printf("Hello world!\n");
     return 0;
 }
