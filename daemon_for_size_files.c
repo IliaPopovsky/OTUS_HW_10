@@ -117,21 +117,28 @@ int main(void)
     fseek(fpt, 0L, SEEK_END);               // перейти в конец файла
     last = ftell(fpt);
     printf("last = %ld\n", last);
+    #if 1
     ret = fork();
     if(ret)
     {
-       sleep(60);
-       system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");
-       //system("/home/ilia/Socket_UDS/echo_socket.out");
+       //sleep(60);
+       //system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");
+       system("/home/ilia/Socket_UDS/echo_socket.out");
     }
     else
     {
-       execvp("/home/ilia/Socket_UDS/echo_socket.out", NULL);
+        //execvp("bash");
+       //execvp("/home/ilia/Socket_UDS/echo_socket.out", NULL);
        //system("/home/ilia/Socket_UDS/echo_socket.out");
-       //system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");
+       sleep(10);
+       system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file"); // Рабочая схема.
     }
-
-
+    #endif // 0
+    #if 0
+    system("/home/ilia/Socket_UDS/echo_socket.out");
+    sleep(10);
+    system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");   // НЕ работающая схема.
+    #endif
     printf("Hello world!\n");
     return 0;
 }
