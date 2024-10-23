@@ -8,6 +8,15 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+
+#define NAME "echo.socket"
+
 int main(void)
 {
     FILE *fp = NULL;
@@ -118,20 +127,64 @@ int main(void)
     last = ftell(fpt);
     printf("last = %ld\n", last);
     #if 1
+    unlink((name_socket));
     ret = fork();
     if(ret)
     {
+       #if 1                          // Тоже рабочая схема.
+       int sock, msgsock, rval;
+       struct sockaddr_un server;
+       char buf[1024];
+       sock = socket(AF_UNIX, SOCK_STREAM, 0);
+       if (sock < 0) {
+          perror("opening stream socket");
+          exit(1);
+       }
+       server.sun_family = AF_UNIX;
+       //strcpy(server.sun_path, NAME);
+       strcpy(server.sun_path, name_socket);
+       if (bind(sock, (struct sockaddr *) &server, sizeof(struct sockaddr_un))) {
+          perror("binding stream socket");
+          exit(1);
+       }
+       printf("Socket has name %s\n", server.sun_path);
+       listen(sock, 5);
+       for (;;) {
+          msgsock = accept(sock, 0, 0);
+       if (msgsock == -1)
+       {
+          perror("accept");
+          break;
+       }
+       else do {
+                bzero(buf, sizeof(buf));
+                if ((rval = read(msgsock, buf, 1024)) < 0)
+                    perror("reading stream message");
+                else if (rval == 0)
+                         printf("Ending connection\n");
+                     else
+                         send(msgsock, buf, strlen(buf), 0);
+               } while (rval > 0);
+       close(msgsock);
+       }
+       close(sock);
+       //unlink(NAME);
+       unlink(name_socket);
+       #endif // 0
        //sleep(60);
        //system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");
-       system("/home/ilia/Socket_UDS/echo_socket.out");
+       //system("/home/ilia/Socket_UDS/echo_socket.out");              // Рабочая схема.
+
     }
     else
     {
         //execvp("bash");
        //execvp("/home/ilia/Socket_UDS/echo_socket.out", NULL);
        //system("/home/ilia/Socket_UDS/echo_socket.out");
-       sleep(10);
-       system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file"); // Рабочая схема.
+       sleep(2);
+       system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");        // Рабочая схема.
+       //system("nc -U -s name_socket < /home/ilia/OTUS_HW_10/control_file");
+
     }
     #endif // 0
     #if 0
