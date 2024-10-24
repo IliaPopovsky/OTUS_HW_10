@@ -17,6 +17,9 @@
 
 #define NAME "echo.socket"
 
+#include <string.h>
+#include <errno.h>
+
 int main(void)
 {
     FILE *fp = NULL;
@@ -182,7 +185,11 @@ int main(void)
        //execvp("/home/ilia/Socket_UDS/echo_socket.out", NULL);
        //system("/home/ilia/Socket_UDS/echo_socket.out");
        sleep(2);
-       system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");        // Рабочая схема.
+       //char *args[] = {"nc", "-U", name_socket, "< /home/ilia/OTUS_HW_10/control_file"};
+       char *args[] = {"nc", "echo.socket", " < ", "/home/ilia/OTUS_HW_10/control_file", 0};
+       execvp("nc", args);
+       printf("execvp() failed. Error: %s\n", strerror(errno));
+       //system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");        // Рабочая схема.
        //system("nc -U -s name_socket < /home/ilia/OTUS_HW_10/control_file");
 
     }
