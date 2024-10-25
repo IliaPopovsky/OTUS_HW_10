@@ -186,9 +186,14 @@ int main(void)
        //system("/home/ilia/Socket_UDS/echo_socket.out");
        sleep(2);
        //char *args[] = {"nc", "-U", name_socket, "< /home/ilia/OTUS_HW_10/control_file"};
-       char *args[] = {"nc", "echo.socket", " < ", "/home/ilia/OTUS_HW_10/control_file", 0};
-       execvp("nc", args);
-       printf("execvp() failed. Error: %s\n", strerror(errno));
+       //char *args[] = {"nc", "echo.socket",  "<", "/home/ilia/OTUS_HW_10/control_file", 0};
+       //execvp("nc", args);
+       //printf("execvp() failed. Error: %s\n", strerror(errno));
+       char target_string[100] = {0};
+       //sprintf(target_string, "nc -U %s < /home/ilia/OTUS_HW_10/control_file", name_socket);  // Рабочая схема.
+       sprintf(target_string, "echo %ld | nc -U %s", last, name_socket);
+       //char *target_string = "nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file";   // Рабочая схема.
+       system(target_string);
        //system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");        // Рабочая схема.
        //system("nc -U -s name_socket < /home/ilia/OTUS_HW_10/control_file");
 
