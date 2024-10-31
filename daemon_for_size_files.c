@@ -8,12 +8,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
+
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <unistd.h>
+
 
 #define NAME "echo.socket"
 
@@ -31,12 +29,12 @@ int main(void)
     char control_symbol = 0;
     pid_t ret;
     printf("Вы хотите демонизировать (перевести в фоновый режим работы) наш процесс с PID = %d?\n", getpid());
-    printf("Введите d если ДА, введите n (или любой другой символ отличный от d) если НЕТ:\n");
+    printf("Введите y если ДА, введите n (или любой другой символ отличный от y) если НЕТ:\n");
     scanf("%c", &control_symbol);
     while(getchar() != '\n')
-        continue;
+       continue;
 
-    if(control_symbol == 'd')
+    if(control_symbol == 'y')
     {
         void daemonize(const char* cmd)
         {
@@ -97,7 +95,11 @@ int main(void)
            int fd1 = dup(0);
            int fd2 = dup(0);
            if (fd0 != 0 || fd1 != 1 || fd2 != 2)
-           syslog(LOG_CRIT, "ошибочные файловые дескрипторы %d %d %d",fd0, fd1, fd2);
+           {
+              syslog(LOG_CRIT, "ошибочные файловые дескрипторы %d %d %d",fd0, fd1, fd2);
+              exit(1);
+           }
+
         }
     }
 
@@ -177,6 +179,9 @@ int main(void)
        //sleep(60);
        //system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");
        //system("/home/ilia/Socket_UDS/echo_socket.out");              // Рабочая схема.
+       //char target_string[100] = {0};
+       //sprintf(target_string, "kill -SIGKILL %d", ret);
+       //system(target_string);
 
     }
     else
@@ -191,9 +196,14 @@ int main(void)
        //printf("execvp() failed. Error: %s\n", strerror(errno));
        char target_string[100] = {0};
        //sprintf(target_string, "nc -U %s < /home/ilia/OTUS_HW_10/control_file", name_socket);  // Рабочая схема.
-       sprintf(target_string, "echo %ld | nc -U %s", last, name_socket);
+       sprintf(target_string, "echo %ld | nc -U %s\0", last, name_socket);
        //char *target_string = "nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file";   // Рабочая схема.
        system(target_string);
+       printf(("Конец дочернего процесса."));
+       system(target_string);
+       //sprintf(target_string, "raise\0");
+       //system(target_string);
+       //exit(0);
        //system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");        // Рабочая схема.
        //system("nc -U -s name_socket < /home/ilia/OTUS_HW_10/control_file");
 
