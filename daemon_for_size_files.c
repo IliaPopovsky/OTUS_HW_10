@@ -18,7 +18,12 @@
 #include <string.h>
 #include <errno.h>
 
-int main(void)
+pid_t ret;
+void socket_create(char *name_socket);
+
+void daemonize(const char* cmd);
+
+int main(int argc, char *argv[])
 {
     FILE *fp = NULL;
     FILE *fpt = NULL;
@@ -27,7 +32,14 @@ int main(void)
     char name_socket[100] = {0};
     int ch = 0;
     char control_symbol = 0;
-    pid_t ret;
+
+    char *cmd;
+    struct sigaction sa;
+    if ((cmd = strrchr(argv[0], '/')) == NULL)
+        cmd = argv[0];
+    else
+        cmd++;
+    //pid_t ret;
     printf("Вы хотите демонизировать (перевести в фоновый режим работы) наш процесс с PID = %d?\n", getpid());
     printf("Введите y если ДА, введите n (или любой другой символ отличный от y) если НЕТ:\n");
     scanf("%c", &control_symbol);
@@ -36,8 +48,135 @@ int main(void)
 
     if(control_symbol == 'y')
     {
-        void daemonize(const char* cmd)
-        {
+        daemonize(cmd);
+    }
+
+    if((fp = fopen("my_daemon.conf", "rb")) == NULL)
+    {
+       printf("Not open file %s\n", "my_daemon.conf");
+       exit(EXIT_FAILURE);
+    }
+    for(int i = 0; (ch = getc(fp)) != ','; i++)
+    {
+       if(('A' <= ch && ch <='Z') || ('a' <= ch && ch <='z') || ch == '.' || ch == '_')
+           name_file[i] = ch;
+       else
+           i--;
+    }
+    for(int i = 0; (ch = getc(fp)) != EOF; i++)
+    {
+       if(('A' <= ch && ch <='Z') || ('a' <= ch && ch <='z') || ch == '.' || ch == '_')
+           name_socket[i] = ch;
+       else
+           i--;
+    }
+
+    if((fpt = fopen(name_file, "rb")) == NULL)
+    {
+       printf("Not open file %s\n", name_file);
+       exit(EXIT_FAILURE);
+    }
+    fseek(fpt, 0L, SEEK_END);               // перейти в конец файла
+    last = ftell(fpt);
+    printf("last = %ld\n", last);
+    #if 1
+    unlink((name_socket));
+
+
+    ret = fork();
+    if(ret)
+    {
+       #if 1                        // Тоже рабочая схема.
+       int sock, msgsock, rval;
+       struct sockaddr_un server;
+       char buf[1024];
+       sock = socket(AF_UNIX, SOCK_STREAM, 0);
+       if (sock < 0) {
+          perror("opening stream socket");
+          exit(1);
+       }
+       server.sun_family = AF_UNIX;
+       //strcpy(server.sun_path, NAME);
+       strcpy(server.sun_path, name_socket);
+       if (bind(sock, (struct sockaddr *) &server, sizeof(struct sockaddr_un))) {
+          perror("binding stream socket");
+          exit(1);
+       }
+       printf("Socket has name %s\n", server.sun_path);
+       listen(sock, 5);
+       for (;;) {
+          msgsock = accept(sock, 0, 0);
+       if (msgsock == -1)
+       {
+          perror("accept");
+          break;
+       }
+       else do {
+                bzero(buf, sizeof(buf));
+                if ((rval = read(msgsock, buf, 1024)) < 0)
+                    perror("reading stream message");
+                else if (rval == 0)
+                         printf("Ending connection\n");
+                     else
+                         send(msgsock, buf, strlen(buf), 0);
+               } while (rval > 0);
+       close(msgsock);
+       }
+       close(sock);
+       //unlink(NAME);
+       unlink(name_socket);
+       //kill(getpid(), SIGINT);
+       //signal(SIGINT, NULL);
+
+       #endif // 0
+       //sleep(60);
+       //system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");
+       //system("/home/ilia/Socket_UDS/echo_socket.out");              // Рабочая схема.
+       //char target_string[100] = {0};
+       //sprintf(target_string, "kill -SIGKILL %d", ret);
+       //system(target_string);
+
+    }
+    else
+    {
+        //execvp("bash");
+       //execvp("/home/ilia/Socket_UDS/echo_socket.out", NULL);
+       //system("/home/ilia/Socket_UDS/echo_socket.out");
+       sleep(2);
+       //char *args[] = {"nc", "-U", name_socket, "< /home/ilia/OTUS_HW_10/control_file"};
+       //char *args[] = {"nc", "echo.socket",  "<", "/home/ilia/OTUS_HW_10/control_file", 0};
+       //execvp("nc", args);
+       //printf("execvp() failed. Error: %s\n", strerror(errno));
+       char target_string[100] = {0};
+       begin:
+       //sprintf(target_string, "nc -U %s < /home/ilia/OTUS_HW_10/control_file", name_socket);  // Рабочая схема.
+       sprintf(target_string, "echo %ld | nc -U %s\0", last, name_socket);
+       //char *target_string = "nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file";   // Рабочая схема.
+       system(target_string);
+       //printf(("Конец дочернего процесса."));
+       //system(target_string);
+       //kill(getppid(), SIGINT);
+       //sprintf(target_string, "raise\0");
+       //system(target_string);
+       //exit(0);
+       //system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");        // Рабочая схема.
+       //system("nc -U -s name_socket < /home/ilia/OTUS_HW_10/control_file");
+
+    }
+    //kill(getpid(), SIGKILL);
+    #endif // 0
+    #if 0
+    system("/home/ilia/Socket_UDS/echo_socket.out");
+    sleep(10);
+    system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");   // НЕ работающая схема.
+    #endif
+
+
+    printf("Hello world!\n");
+    return 0;
+}
+void daemonize(const char* cmd)
+{
            /*
             * Инициализировать файл журнала.
             */
@@ -100,120 +239,4 @@ int main(void)
               exit(1);
            }
 
-        }
-    }
-
-    if((fp = fopen("my_daemon.conf", "rb")) == NULL)
-    {
-       printf("Not open file %s\n", "my_daemon.conf");
-       exit(EXIT_FAILURE);
-    }
-    for(int i = 0; (ch = getc(fp)) != ','; i++)
-    {
-       if(('A' <= ch && ch <='Z') || ('a' <= ch && ch <='z') || ch == '.' || ch == '_')
-           name_file[i] = ch;
-       else
-           i--;
-    }
-    for(int i = 0; (ch = getc(fp)) != EOF; i++)
-    {
-       if(('A' <= ch && ch <='Z') || ('a' <= ch && ch <='z') || ch == '.' || ch == '_')
-           name_socket[i] = ch;
-       else
-           i--;
-    }
-
-    if((fpt = fopen(name_file, "rb")) == NULL)
-    {
-       printf("Not open file %s\n", name_file);
-       exit(EXIT_FAILURE);
-    }
-    fseek(fpt, 0L, SEEK_END);               // перейти в конец файла
-    last = ftell(fpt);
-    printf("last = %ld\n", last);
-    #if 1
-    unlink((name_socket));
-    ret = fork();
-    if(ret)
-    {
-       #if 1                          // Тоже рабочая схема.
-       int sock, msgsock, rval;
-       struct sockaddr_un server;
-       char buf[1024];
-       sock = socket(AF_UNIX, SOCK_STREAM, 0);
-       if (sock < 0) {
-          perror("opening stream socket");
-          exit(1);
-       }
-       server.sun_family = AF_UNIX;
-       //strcpy(server.sun_path, NAME);
-       strcpy(server.sun_path, name_socket);
-       if (bind(sock, (struct sockaddr *) &server, sizeof(struct sockaddr_un))) {
-          perror("binding stream socket");
-          exit(1);
-       }
-       printf("Socket has name %s\n", server.sun_path);
-       listen(sock, 5);
-       for (;;) {
-          msgsock = accept(sock, 0, 0);
-       if (msgsock == -1)
-       {
-          perror("accept");
-          break;
-       }
-       else do {
-                bzero(buf, sizeof(buf));
-                if ((rval = read(msgsock, buf, 1024)) < 0)
-                    perror("reading stream message");
-                else if (rval == 0)
-                         printf("Ending connection\n");
-                     else
-                         send(msgsock, buf, strlen(buf), 0);
-               } while (rval > 0);
-       close(msgsock);
-       }
-       close(sock);
-       //unlink(NAME);
-       unlink(name_socket);
-       #endif // 0
-       //sleep(60);
-       //system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");
-       //system("/home/ilia/Socket_UDS/echo_socket.out");              // Рабочая схема.
-       //char target_string[100] = {0};
-       //sprintf(target_string, "kill -SIGKILL %d", ret);
-       //system(target_string);
-
-    }
-    else
-    {
-        //execvp("bash");
-       //execvp("/home/ilia/Socket_UDS/echo_socket.out", NULL);
-       //system("/home/ilia/Socket_UDS/echo_socket.out");
-       sleep(2);
-       //char *args[] = {"nc", "-U", name_socket, "< /home/ilia/OTUS_HW_10/control_file"};
-       //char *args[] = {"nc", "echo.socket",  "<", "/home/ilia/OTUS_HW_10/control_file", 0};
-       //execvp("nc", args);
-       //printf("execvp() failed. Error: %s\n", strerror(errno));
-       char target_string[100] = {0};
-       //sprintf(target_string, "nc -U %s < /home/ilia/OTUS_HW_10/control_file", name_socket);  // Рабочая схема.
-       sprintf(target_string, "echo %ld | nc -U %s\0", last, name_socket);
-       //char *target_string = "nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file";   // Рабочая схема.
-       system(target_string);
-       printf(("Конец дочернего процесса."));
-       system(target_string);
-       //sprintf(target_string, "raise\0");
-       //system(target_string);
-       //exit(0);
-       //system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");        // Рабочая схема.
-       //system("nc -U -s name_socket < /home/ilia/OTUS_HW_10/control_file");
-
-    }
-    #endif // 0
-    #if 0
-    system("/home/ilia/Socket_UDS/echo_socket.out");
-    sleep(10);
-    system("nc -U echo.socket < /home/ilia/OTUS_HW_10/control_file");   // НЕ работающая схема.
-    #endif
-    printf("Hello world!\n");
-    return 0;
 }
