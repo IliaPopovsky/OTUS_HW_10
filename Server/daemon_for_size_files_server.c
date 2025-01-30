@@ -25,7 +25,7 @@ static void err_doit(int errnoflag, int level, const char *fmt, va_list ap)
 	strcat(buf, "\n");
 
 	if (daemon_proc) {
-		syslog(level, buf);
+		syslog(level, buf, "empty");
 	} else {
 		fflush(stdout);		                                 /* in case stdout and stderr are the same */
 		fputs(buf, stderr);
@@ -80,7 +80,7 @@ void Listen(int fd, int backlog)                                               /
 
 void Write(int fd, void *ptr, size_t nbytes)                                   // Наша собственная функция-обертка для функции write.
 {
-	if (write(fd, ptr, nbytes) != nbytes)
+	if ((size_t)write(fd, ptr, nbytes) != nbytes)
 		err_sys("write error");
 }
 
@@ -137,7 +137,7 @@ writen(int fd, const void *vptr, size_t n)
 void
 Writen(int fd, void *ptr, size_t nbytes)
 {
-	if (writen(fd, ptr, nbytes) != nbytes)
+	if ((size_t)writen(fd, ptr, nbytes) != nbytes)
 		err_sys("writen error");
 }
 
@@ -168,8 +168,8 @@ void mistake_open_file_for_clients(int sockfd, char *array)
 
 void sig_chld(int signo)
 {
-	pid_t	pid;
-	int		stat;
+	pid_t pid;
+	int stat = signo;
 
 	while ( (pid = waitpid(-1, &stat, WNOHANG)) > 0)
 		printf("child %d terminated\n", pid);
@@ -215,7 +215,7 @@ int main(int argc, char **argv)
 {
    int listenfd, connfd;
    pid_t childpid;
-   socklen_t clilen, servlen;
+   socklen_t clilen;
    struct sockaddr_un cliaddr, servaddr;
    char sock_file[300] = {0};
    char name_file[300] = {0};
@@ -225,7 +225,6 @@ int main(int argc, char **argv)
    char ch = 0;
    char control_symbol = 0;
    char *cmd;
-   struct sigaction sa;
    
    if(argc < 2)
        err_quit("Enter the absolute pathname of the file as the first argument to this program!");
@@ -365,7 +364,7 @@ void daemonize(const char* cmd)
             */
            if (rl.rlim_max == RLIM_INFINITY)
                rl.rlim_max = 1024;
-           for (int i = 0; i < rl.rlim_max; i++)
+           for (int i = 0; i < (int)rl.rlim_max; i++)
                close(i);
 
             /*
