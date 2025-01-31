@@ -58,14 +58,13 @@ int main(int argc, char **argv)
    char recvline[MAXLINE + 1];
    int counter_reads = 0;
    struct sockaddr_un servaddr;                                        // Структура адреса сервера.
-   //char sock_file[] = "/tmp/daemon_socket";
    char sock_file[300] = {0};
    char name_file[300] = {0};
    FILE *fp = NULL;
    FILE *fpt = NULL;
    char ch = 0;
-   //if(argc != 2)
-       //err_quit("usage: a.out <IPaddress>");
+   if(argc < 2)
+       err_quit("Enter the absolute pathname of the file as the first argument to this program!");
    
    if( (fp = fopen(argv[1], "r")) == NULL)
    {
@@ -86,33 +85,26 @@ int main(int argc, char **argv)
    }
    
    
-   if((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)                  // Создание сокета, функция socket() создает объект сокета в ядре ОС с помощью системного вызова socket, который имеет номер
-       err_sys("socket error");                                        // 41 для 64-битной ОС Linux и номер 359 для 32-битной ОС LINUX, а в других ОС какой-то другой номер.
-                                                                       // Системный вызов socket() создаёт конечную точку соединения и возвращает файловый дескриптор, указывающий на эту точку. 
-                                                                       // Возвращаемый при успешном выполнении файловый дескриптор будет иметь самый маленький номер, который не используется 
-                                                                       // процессом.                                                                             
-   bzero(&servaddr, sizeof(servaddr));                                 // Инициализируем всю структуру адреса сервера нулями. Функция bzero() имеет свою реализацию в некоторых ОС. У нас она
-                                                                       // имеет вид функционального макроса, который вызывает библиотечную функцию memset() и располагается в файле unp.h
-                                                                       // на случай, если в какой-то ОС не будет своей реализации функции bzero().
-   servaddr.sun_family = AF_UNIX;                                      // Присваиваем значение полю структуры адреса сервера, отвечающему за семейство адресов.     
+   if((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)                  
+       err_sys("socket error");                                        
+                                                                         
+   bzero(&servaddr, sizeof(servaddr));                                 
+   
+   servaddr.sun_family = AF_UNIX;                                         
 
    strncpy(servaddr.sun_path, sock_file, sizeof(servaddr.sun_path) - 1);
       
    printf("Наш клиент имеет PID = %d\n", getpid());
    
-   if(connect(sockfd, (SA *)&servaddr, sizeof(servaddr)) < 0)          // Функция connect() устанавливает соединение нашего сокета sockfd с сервером, адрес сокета которого содержится в структуре
-      err_sys("connect error");                                        // адреса сервера servaddr. Функция connect() использует системный вызов connect, который имеет номер 42 для 64-битной 
-                                                                       // ОС Linux и номер 362 для 32-битной ОС LINUX, а в других ОС какой-то другой номер. 
-                                                                       // Системный вызов connect() устанавливает соединение с сокетом, заданным файловый дескриптором sockfd, ссылающимся
-                                                                       // на адрес servaddr. Аргумент sizeof(servaddr) определяет размер servaddr. Формат адреса в servaddr определяется адресным 
-                                                                       // пространством сокета sockfd.                                                                       
+   if(connect(sockfd, (SA *)&servaddr, sizeof(servaddr)) < 0)          
+      err_sys("connect error");                                                                                                              
    
-   while((n = read(sockfd, recvline, MAXLINE)) > 0)                    // Ответ сервера приходит в наш сокет sockfd, из него мы читаем в наш массив recvline с помощью функции read(), вызывая её 
-   {                                                                   // циклически, т.к. по протоколу TCP данные могут придти не в виде одного сегмента, а в виде нескольких сегментов, поэтому 
-                                                                       // нужно несколько раз вызывать функцию read() в цикле.
-      counter_reads++;                                                 // counter_reads показывает на сколько сегментов был разделен изначальный объем информации, передаваемой по протоколу TCP.
-      recvline[n] = 0; /* завершающий нуль */                          // Обычно возвращается один сегмент, но при больших объемах данных нельзя расчитывать, что ответ сервера будет получен с 
-      if(fputs(recvline, stdout) == EOF)                               // помощью одного вызова функции read().
+   while((n = read(sockfd, recvline, MAXLINE)) > 0)                    
+   {                                                                   
+                                                                       
+      counter_reads++;                                                 
+      recvline[n] = 0; /* завершающий нуль */                           
+      if(fputs(recvline, stdout) == EOF)                               
           err_sys("fputs error");
    }
    if(n < 0)
