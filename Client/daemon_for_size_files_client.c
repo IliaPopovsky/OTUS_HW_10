@@ -1,5 +1,6 @@
 // daemon_for_size_files_client.c
-#include "unp.h"
+//#include "unp.h"
+#include "unp_M.h"
 #include <stdarg.h>
 #include <syslog.h>		                                                /* for syslog() */
 
@@ -23,7 +24,7 @@ static void err_doit(int errnoflag, int level, const char *fmt, va_list ap)
 	strcat(buf, "\n");
 
 	if (daemon_proc) {
-		syslog(level, buf);
+		syslog(level, buf, "empty");
 	} else {
 		fflush(stdout);		                                 /* in case stdout and stderr are the same */
 		fputs(buf, stderr);
@@ -59,9 +60,7 @@ int main(int argc, char **argv)
    int counter_reads = 0;
    struct sockaddr_un servaddr;                                        // Структура адреса сервера.
    char sock_file[300] = {0};
-   char name_file[300] = {0};
    FILE *fp = NULL;
-   FILE *fpt = NULL;
    char ch = 0;
    if(argc < 2)
        err_quit("Enter the absolute pathname of the file as the first argument to this program!");
@@ -75,15 +74,6 @@ int main(int argc, char **argv)
    {
       sock_file[i] = ch;
    }
-   for(int i = 0; (ch = getc(fp)) != EOF;)
-   {
-      if(ch != ' ' && ch != ',' && ch != '\n')
-      {
-         name_file[i] = ch;
-         i++;
-      }
-   }
-   
    
    if((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)                  
        err_sys("socket error");                                        
