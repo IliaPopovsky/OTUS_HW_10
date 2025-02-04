@@ -68,6 +68,7 @@ int main(int argc, char **argv)
    if( (fp = fopen(argv[1], "r")) == NULL)
    {
       fprintf(stderr, "Не удается открыть файл %s\n", argv[1]);
+      fprintf(stderr, "Cannot open file %s\n", argv[1]);
       exit(EXIT_FAILURE);
    }
    for(int i = 0; (ch = getc(fp)) != ',' && ch != ' '; i++)
@@ -85,6 +86,7 @@ int main(int argc, char **argv)
    strncpy(servaddr.sun_path, sock_file, sizeof(servaddr.sun_path) - 1);
       
    printf("Наш клиент имеет PID = %d\n", getpid());
+   printf("Our client has PID = %d\n", getpid());
    
    if(connect(sockfd, (SA *)&servaddr, sizeof(servaddr)) < 0)          
       err_sys("connect error");                                                                                                              
@@ -93,7 +95,7 @@ int main(int argc, char **argv)
    {                                                                   
                                                                        
       counter_reads++;                                                 
-      recvline[n] = 0; /* завершающий нуль */                           
+      recvline[n] = 0;           /* завершающий нуль */ /* terminating null */                          
       if(fputs(recvline, stdout) == EOF)                               
           err_sys("fputs error");
    }
