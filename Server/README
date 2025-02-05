@@ -1,0 +1,5 @@
+При запуске приложения-сервера нужно указывать абсолютное путевое имя файла конфигурации демона в качестве 1-го аргумента команды. Например, я делаю так: 
+ilia@ilia-VirtualBox:~/OTUS_HW_10/Server$ ./daemon_for_size_files_server /home/ilia/OTUS_HW_10/Server/my_daemon.conf
+
+When starting a server application, you need the absolute pathname of the daemon configuration file as the 1st argument of the command. For example, I do this:
+ilia@ilia-VirtualBox:~/OTUS_HW_10/Server$ ./daemon_for_size_files_server /home/ilia/OTUS_HW_10/Server/my_daemon.conf
